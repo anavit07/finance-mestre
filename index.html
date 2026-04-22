@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FinanceMestre</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --bg:      #06080a;
+  --s1:      #0d1117;
+  --s2:      #131b22;
+  --s3:      #1a2535;
+  --border:  #1e2d3d;
+  --text:    #d4e0ed;
+  --muted:   #4a6278;
+  --green:   #00c896;
+  --green-d: #00412f;
+  --green-g: rgba(0,200,150,.07);
+  --red:     #e05252;
+  --gold:    #f0c040;
+  --blue:    #3d9be9;
+  --orange:  #e07a30;
+  --violet:  #9b72d4;
+
+  --c-fund:  #00c896;
+  --c-juro:  #3d9be9;
+  --c-imp:   #f0c040;
+  --c-pat:   #e07a30;
+  --c-inv:   #9b72d4;
+  --c-prot:  #e05252;
+  --c-comp:  #2dc4b2;
+  --c-err:   #c45c2d;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'IBM Plex Mono','Courier New',monospace;background:var(--bg);color:var(--text)}
+
+/* grid pattern bg */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,200,150,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,200,150,.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+#app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
+
+.screen{display:none;flex:1;flex-direction:column;overflow-y:auto;overflow-x:hidden;padding-bottom:76px}
+.screen.active{display:flex;animation:rise .2s ease}
+@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* TOPBAR */
+.topbar{
+  padding:14px 20px 12px;border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{font-family:'Libre Baskerville',serif;font-size:17px;color:var(--green);letter-spacing:-.3px}
+.brand span{font-style:italic;color:var(--text)}
+.topdate{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+
+/* NAV */
+.nav{position:absolute;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--border);display:flex;z-index:50}
+.nav-btn{flex:1;padding:9px 2px 13px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:8px;letter-spacing:.3px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;transition:color .15s}
+.nav-btn .ni{font-size:17px}
+.nav-btn.active{color:var(--green)}
+
+/* ════ DASHBOARD ════ */
+.dash-hero{padding:20px 20px 4px;background:linear-gradient(180deg,var(--s1) 0%,transparent 100%)}
+.dash-tag{font-size:9px;letter-spacing:3px;color:var(--green);text-transform:uppercase;margin-bottom:8px}
+.dash-h1{font-family:'Libre Baskerville',serif;font-size:24px;line-height:1.2;font-weight:700;margin-bottom:4px}
+.dash-h1 em{font-style:italic;color:var(--green);font-weight:400}
+.dash-sub{font-size:10px;color:var(--muted);line-height:1.6;letter-spacing:.3px}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 20px 4px}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px 4px;text-align:center}
+.stat-n{display:block;font-family:'Libre Baskerville',serif;font-size:22px;color:var(--green);line-height:1}
+.stat-l{display:block;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+
+.alert-box{margin:10px 20px 4px;padding:13px 16px;border-radius:8px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.alert-box:active{opacity:.8}
+.alert-rev{background:rgba(0,200,150,.06);border:1px solid var(--green-d)}
+.alert-quiz{background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.3)}
+.ab-icon{font-size:20px}
+.ab-info{flex:1}
+.ab-t{font-size:13px;margin-bottom:2px;font-family:'Libre Baskerville',serif}
+.ab-t.green{color:var(--green)}
+.ab-t.gold{color:var(--gold)}
+.ab-s{font-size:10px;color:var(--muted)}
+.ab-a{font-size:16px;color:var(--muted)}
+
+.sec-label{padding:14px 20px 7px;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
+.cat-list{display:flex;flex-direction:column;gap:7px;padding:0 20px 12px}
+.cat-item{
+  background:var(--s1);border:1px solid var(--border);
+  border-left:3px solid var(--c,var(--green));border-radius:8px;
+  padding:13px 15px;display:flex;align-items:center;gap:11px;
+  cursor:pointer;transition:opacity .15s,background .15s;
+}
+.cat-item:active{opacity:.75;background:var(--s2)}
+.cat-em{font-size:20px}
+.cat-info{flex:1;min-width:0}
+.cat-name{font-family:'Libre Baskerville',serif;font-size:14px;margin-bottom:2px}
+.cat-sub{font-size:9px;color:var(--muted);letter-spacing:.3px}
+.bar{height:2px;background:var(--s3);border-radius:2px;margin-top:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width .6s}
+.pct{font-size:10px;color:var(--muted);flex-shrink:0}
+.pct.done{color:var(--green)}
+
+/* ════ STUDY ════ */
+.card-nav{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.back-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;gap:4px}
+.card-prog{font-size:10px;color:var(--muted)}
+
+.study-card{margin:0 20px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--s1)}
+.sc-top{padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sc-cat{font-size:9px;color:var(--green);letter-spacing:1.5px;text-transform:uppercase}
+.sc-em{font-size:18px}
+.sc-body{padding:18px}
+.sc-title{font-family:'Libre Baskerville',serif;font-size:20px;line-height:1.25;font-weight:700;margin-bottom:12px}
+.sc-lead{
+  margin-bottom:14px;padding:12px 14px;
+  background:var(--green-g);border-left:2px solid var(--green);
+  border-radius:0 6px 6px 0;font-size:12px;line-height:1.65;color:var(--green);
+}
+.sc-content{font-size:13px;line-height:1.8}
+.sc-content p{margin-bottom:10px}
+
+.sc-table{width:100%;border-collapse:collapse;font-size:11px;margin:10px 0}
+.sc-table th{background:var(--s3);color:var(--muted);font-weight:500;padding:7px 8px;text-align:left;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
+.sc-table td{padding:7px 8px;border-bottom:1px solid var(--border)}
+.sc-table tr:last-child td{border-bottom:none}
+
+.kp-wrap{margin:0 20px;padding:13px 0;border-top:1px solid var(--border)}
+.kp-label{font-size:9px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:10px}
+.kp{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;font-size:12px;line-height:1.55}
+.kp-dot{color:var(--green);flex-shrink:0;font-size:10px;margin-top:2px}
+
+.apply-box{margin:0 20px 8px;padding:13px 15px;background:var(--s2);border-radius:8px;border:1px solid var(--border)}
+.apply-label{font-size:9px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:6px}
+.apply-text{font-size:12px;line-height:1.65}
+
+.study-actions{display:flex;gap:8px;padding:12px 20px}
+.btn{flex:1;padding:12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;text-transform:uppercase;transition:opacity .15s}
+.btn:active{opacity:.75}
+.btn-green{background:var(--green);color:#06080a;font-weight:500}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-gold{background:var(--gold);color:#06080a;font-weight:500}
+
+/* ════ TEACH ════ */
+.teach-prompt{margin:0 20px 10px;padding:14px 16px;background:var(--s1);border:1px solid var(--border);border-radius:8px}
+.tp-label{font-size:9px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:7px}
+.tp-q{font-family:'Libre Baskerville',serif;font-size:15px;line-height:1.4;font-style:italic}
+.teach-hint{margin:0 20px 10px;font-size:10px;color:var(--muted);line-height:1.6}
+.teach-ta{width:calc(100% - 40px);margin:0 20px;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:13px 15px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.7;resize:none;height:165px;outline:none;transition:border-color .2s}
+.teach-ta:focus{border-color:var(--green)}
+.teach-ta::placeholder{color:var(--muted);font-style:italic}
+.wc{text-align:right;padding:4px 20px 2px;font-size:10px;color:var(--muted)}
+.fb-box{margin:10px 20px 0;padding:15px;background:var(--s2);border-radius:8px;border:1px solid var(--border);display:none}
+.fb-box.show{display:block;animation:rise .2s ease}
+.fb-label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+.fb-score{font-family:'Libre Baskerville',serif;font-size:30px;color:var(--green);margin-bottom:8px}
+.fb-text{font-size:12px;line-height:1.65}
+.fb-tip{margin-top:9px;padding:9px 13px;background:var(--green-g);border-left:2px solid var(--green);border-radius:0 5px 5px 0;font-size:11px;line-height:1.6}
+
+/* ════ REVIEW ════ */
+.flip-wrap{margin:0 20px;perspective:1400px;cursor:pointer;min-height:250px}
+.flip-inner{position:relative;transition:transform .48s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;min-height:250px}
+.flip-wrap.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-face{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:26px 20px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip-back{position:absolute;top:0;left:0;right:0;bottom:0;transform:rotateY(180deg);overflow-y:auto}
+.ff-label{font-size:9px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:14px}
+.ff-q{font-family:'Libre Baskerville',serif;font-size:16px;line-height:1.45;font-style:italic}
+.ff-hint{margin-top:18px;font-size:9px;color:var(--muted);letter-spacing:1px}
+
+.rating-area{padding:14px 20px;display:none}
+.rating-area.show{display:block}
+.rl{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px;text-align:center}
+.rbts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rbt{padding:11px 4px;border-radius:8px;border:1px solid var(--border);background:var(--s1);cursor:pointer;text-align:center;transition:all .15s}
+.rbt:active{transform:scale(.96)}
+.rbt .re{font-size:18px;display:block;margin-bottom:3px}
+.rbt .rl2{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.rbt.r1.sel{border-color:var(--red);background:rgba(224,82,82,.1)}
+.rbt.r2.sel{border-color:var(--orange);background:rgba(224,122,48,.1)}
+.rbt.r3.sel{border-color:var(--blue);background:rgba(61,155,233,.1)}
+.rbt.r4.sel{border-color:var(--green);background:rgba(0,200,150,.1)}
+
+.rev-done{display:none;flex-direction:column;align-items:center;justify-content:center;padding:50px 30px;text-align:center;gap:13px}
+.rev-done.show{display:flex}
+.rd-icon{font-size:44px}
+.rd-title{font-family:'Libre Baskerville',serif;font-size:20px;font-style:italic;color:var(--green)}
+.rd-sub{font-size:11px;color:var(--muted);line-height:1.7}
+.btn-center{margin-top:6px;padding:12px 26px;background:var(--green);color:#06080a;border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer}
+.btn-center:active{opacity:.8}
+
+/* ════════════════════════════════
+        QUIZ SCREEN
+════════════════════════════════ */
+#screen-quiz{padding-bottom:76px}
+
+.quiz-topbar{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)}
+.quiz-title{font-family:'Libre Baskerville',serif;font-size:15px;color:var(--gold)}
+.quiz-meta{font-size:10px;color:var(--muted)}
+
+/* INTRO */
+.quiz-intro{display:flex;flex-direction:column;align-items:center;padding:30px 24px;text-align:center;gap:14px}
+.qi-icon{font-size:48px}
+.qi-h{font-family:'Libre Baskerville',serif;font-size:22px;color:var(--gold)}
+.qi-sub{font-size:12px;color:var(--muted);line-height:1.7}
+.qi-rules{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:left;width:100%}
+.qi-rule{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;font-size:12px;line-height:1.5}
+.qi-rule:last-child{margin-bottom:0}
+.qi-r-icon{color:var(--green);flex-shrink:0}
+.btn-quiz-start{width:100%;padding:14px;background:var(--gold);color:#06080a;border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-weight:500}
+.btn-quiz-start:active{opacity:.8}
+
+/* QUESTION */
+.quiz-body{padding:0 20px;display:none}
+.quiz-body.show{display:block;animation:rise .2s ease}
+.q-progress-wrap{margin-bottom:16px}
+.q-progress-label{display:flex;justify-content:space-between;margin-bottom:6px;font-size:10px;color:var(--muted)}
+.q-progress-bar{height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.q-progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .4s}
+
+.q-cat-badge{display:inline-block;font-size:9px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;border:1px solid rgba(240,192,64,.3);padding:3px 8px;border-radius:4px}
+.q-text{font-family:'Libre Baskerville',serif;font-size:17px;line-height:1.35;font-style:italic;margin-bottom:18px}
+.q-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.q-opt{
+  padding:13px 16px;background:var(--s1);border:1px solid var(--border);
+  border-radius:8px;cursor:pointer;font-size:13px;line-height:1.45;
+  display:flex;align-items:center;gap:12px;transition:all .15s;
+}
+.q-opt:active{opacity:.8}
+.q-opt.selected{border-color:var(--gold);background:rgba(240,192,64,.07)}
+.q-opt.correct{border-color:var(--green);background:rgba(0,200,150,.1);pointer-events:none}
+.q-opt.wrong{border-color:var(--red);background:rgba(224,82,82,.1);pointer-events:none}
+.q-opt.disabled{pointer-events:none;opacity:.55}
+.q-opt-letter{
+  width:24px;height:24px;border-radius:50%;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--muted);flex-shrink:0;transition:all .15s;
+}
+.q-opt.selected .q-opt-letter{border-color:var(--gold);color:var(--gold)}
+.q-opt.correct .q-opt-letter{border-color:var(--green);color:var(--green);background:rgba(0,200,150,.15)}
+.q-opt.wrong .q-opt-letter{border-color:var(--red);color:var(--red);background:rgba(224,82,82,.15)}
+
+.q-feedback{
+  padding:12px 14px;border-radius:8px;margin-bottom:12px;
+  font-size:12px;line-height:1.6;display:none;
+}
+.q-feedback.show{display:block;animation:rise .2s ease}
+.q-feedback.correct-fb{background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.3);color:var(--text)}
+.q-feedback.wrong-fb{background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.3);color:var(--text)}
+.q-feedback b{display:block;margin-bottom:4px;font-size:13px}
+.q-feedback b.c{color:var(--green)}
+.q-feedback b.w{color:var(--red)}
+
+.btn-next-q{width:100%;padding:13px;background:var(--gold);color:#06080a;border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-weight:500;display:none;margin-bottom:16px}
+.btn-next-q.show{display:block}
+.btn-next-q:active{opacity:.8}
+
+/* RESULT */
+.quiz-result{display:none;flex-direction:column;align-items:center;padding:28px 24px;text-align:center;gap:14px}
+.quiz-result.show{display:flex;animation:rise .2s ease}
+.qr-score-wrap{position:relative;width:130px;height:130px;margin:6px 0}
+.qr-score-wrap svg{width:130px;height:130px;transform:rotate(-90deg)}
+.qr-circle-bg{fill:none;stroke:var(--s3);stroke-width:8}
+.qr-circle-fill{fill:none;stroke:var(--gold);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease;stroke-dasharray:314;stroke-dashoffset:314}
+.qr-score-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.qr-score-n{font-family:'Libre Baskerville',serif;font-size:32px;color:var(--gold);display:block;line-height:1}
+.qr-score-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.qr-h{font-family:'Libre Baskerville',serif;font-size:20px}
+.qr-msg{font-size:12px;color:var(--muted);line-height:1.7;max-width:300px}
+.qr-breakdown{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:14px;width:100%;text-align:left}
+.qr-bd-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.qr-bd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px}
+.qr-bd-row:last-child{margin-bottom:0}
+.qr-bd-cat{color:var(--text)}
+.qr-bd-res{display:flex;gap:8px}
+.qr-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.qr-dot.c{background:var(--green)}
+.qr-dot.w{background:var(--red)}
+.qr-actions{display:flex;gap:8px;width:100%}
+.btn-retry{flex:1;padding:13px;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer}
+.btn-retry:active{opacity:.8}
+
+/* ════ SETTINGS ════ */
+.sett-s{padding:20px}
+.sett-title{font-family:'Libre Baskerville',serif;font-size:17px;font-style:italic;color:var(--green);margin-bottom:18px}
+.sett-label{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px;display:block}
+.sett-input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:11px 13px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;transition:border-color .2s;margin-bottom:6px}
+.sett-input:focus{border-color:var(--green)}
+.sett-hint{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:13px}
+.sett-btn{width:100%;padding:11px;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;transition:border-color .2s,color .2s}
+.sett-btn:hover{border-color:var(--green);color:var(--green)}
+.sett-btn.danger{border-color:var(--red);color:var(--red)}
+.sync-st{font-size:10px;text-align:center;min-height:14px;margin-top:4px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.app-ver{font-size:10px;color:var(--muted);text-align:center;line-height:1.9}
+
+/* TOAST */
+.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 18px;border-radius:30px;font-size:11px;opacity:0;transition:all .25s;pointer-events:none;z-index:2000;white-space:nowrap;max-width:calc(100vw - 40px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="brand">Finance<span>Mestre</span></div>
+    <div class="topdate" id="topDate"></div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="screen active" id="screen-dash">
+    <div class="dash-hero">
+      <div class="dash-tag">Educação financeira estratégica</div>
+      <h1 class="dash-h1">Ganhe, proteja,<br><em>multiplique</em> seu dinheiro</h1>
+      <p class="dash-sub">Fundamentos · Juros · Impostos · Investimentos · Patrimônio</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-n" id="s-streak">0</span><span class="stat-l">Seq.</span></div>
+      <div class="stat"><span class="stat-n" id="s-mastered">0</span><span class="stat-l">Dom.</span></div>
+      <div class="stat"><span class="stat-n" id="s-due">0</span><span class="stat-l">Revisar</span></div>
+      <div class="stat"><span class="stat-n" id="s-quiz">0</span><span class="stat-l">Quiz %</span></div>
+    </div>
+    <div id="alert-wrap"></div>
+    <div class="sec-label">— Módulos de estudo</div>
+    <div class="cat-list" id="cat-list"></div>
+  </div>
+
+  <!-- ══ STUDY ══ -->
+  <div class="screen" id="screen-study">
+    <div class="card-nav">
+      <button class="back-btn" onclick="goBack('dash')">← Início</button>
+      <span class="card-prog" id="study-prog"></span>
+    </div>
+    <div id="study-card-wrap"></div>
+    <div id="study-kp"></div>
+    <div id="study-apply"></div>
+    <div class="study-actions">
+      <button class="btn btn-ghost" onclick="goTeach()">✍ Ensinar</button>
+      <button class="btn btn-green" id="btn-next" onclick="nextCard()">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ══ TEACH ══ -->
+  <div class="screen" id="screen-teach">
+    <div class="card-nav">
+      <button class="back-btn" onclick="goBackToStudy()">← Voltar</button>
+      <span class="card-prog">Aprenda ensinando</span>
+    </div>
+    <div class="teach-prompt">
+      <div class="tp-label">Desafio prático</div>
+      <div class="tp-q" id="teach-q"></div>
+    </div>
+    <div class="teach-hint">Explique como ensinaria a um amigo. Conecte ao seu dinheiro real.</div>
+    <textarea class="teach-ta" id="teach-ta" placeholder="Explique com suas palavras... cite exemplos do seu dia a dia financeiro..."></textarea>
+    <div class="wc" id="wc">0 palavras</div>
+    <div class="fb-box" id="fb-box">
+      <div class="fb-label">Avaliação</div>
+      <div class="fb-score" id="fb-score"></div>
+      <div class="fb-text" id="fb-text"></div>
+      <div class="fb-tip" id="fb-tip"></div>
+    </div>
+    <div style="display:flex;gap:8px;padding:12px 20px">
+      <button class="btn btn-ghost" onclick="clearTeach()">Limpar</button>
+      <button class="btn btn-green" onclick="submitTeach()">Avaliar ✓</button>
+    </div>
+  </div>
+
+  <!-- ══ REVIEW ══ -->
+  <div class="screen" id="screen-review">
+    <div class="card-nav">
+      <button class="back-btn" onclick="goBack('dash')">← Sair</button>
+      <span class="card-prog" id="rev-prog"></span>
+    </div>
+    <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
+      <div class="flip-inner">
+        <div class="flip-face flip-front">
+          <div class="ff-label">Pergunta</div>
+          <div class="ff-q" id="rev-q"></div>
+          <div class="ff-hint">Toque para ver resposta →</div>
+        </div>
+        <div class="flip-face flip-back"><div id="rev-ans"></div></div>
+      </div>
+    </div>
+    <div class="rating-area" id="rating-area">
+      <div class="rl">Como foi?</div>
+      <div class="rbts">
+        <div class="rbt r1" onclick="rateCard(1)"><span class="re">😰</span><span class="rl2">Não sei</span></div>
+        <div class="rbt r2" onclick="rateCard(2)"><span class="re">😕</span><span class="rl2">Difícil</span></div>
+        <div class="rbt r3" onclick="rateCard(3)"><span class="re">🙂</span><span class="rl2">Bom</span></div>
+        <div class="rbt r4" onclick="rateCard(4)"><span class="re">💰</span><span class="rl2">Dominei</span></div>
+      </div>
+    </div>
+    <div class="rev-done" id="rev-done">
+      <div class="rd-icon">✅</div>
+      <div class="rd-title">Revisão concluída!</div>
+      <div class="rd-sub">Sinapses reforçadas. Volte amanhã para manter a sequência.</div>
+      <button class="btn-center" onclick="navigate('dash')">← Início</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+          QUIZ SCREEN
+  ══════════════════════════════ -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-topbar">
+      <div class="quiz-title">Quiz Financeiro</div>
+      <div class="quiz-meta" id="quiz-meta">20 perguntas</div>
+    </div>
+
+    <!-- INTRO -->
+    <div class="quiz-intro" id="quiz-intro">
+      <div class="qi-icon">🏆</div>
+      <div class="qi-h">Teste seu conhecimento</div>
+      <div class="qi-sub">20 perguntas cobrindo todos os módulos.<br>Veja onde você está sólido e onde precisa reforçar.</div>
+      <div class="qi-rules">
+        <div class="qi-rule"><span class="qi-r-icon">▸</span>4 alternativas por pergunta — apenas 1 correta</div>
+        <div class="qi-rule"><span class="qi-r-icon">▸</span>Feedback imediato com explicação</div>
+        <div class="qi-rule"><span class="qi-r-icon">▸</span>Placar final com análise por módulo</div>
+        <div class="qi-rule"><span class="qi-r-icon">▸</span>Progresso salvo automaticamente</div>
+      </div>
+      <div id="quiz-last-score" style="font-size:11px;color:var(--muted);display:none"></div>
+      <button class="btn-quiz-start" onclick="startQuiz()">Iniciar Quiz →</button>
+    </div>
+
+    <!-- QUESTION -->
+    <div class="quiz-body" id="quiz-body">
+      <div class="q-progress-wrap">
+        <div class="q-progress-label">
+          <span id="q-num">Pergunta 1 de 20</span>
+          <span id="q-score-live">✓ 0 | ✗ 0</span>
+        </div>
+        <div class="q-progress-bar"><div class="q-progress-fill" id="q-pfill"></div></div>
+      </div>
+      <div class="q-cat-badge" id="q-cat-badge"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-options" id="q-options"></div>
+      <div class="q-feedback" id="q-feedback"></div>
+      <button class="btn-next-q" id="btn-next-q" onclick="nextQuestion()">Próxima →</button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="quiz-result" id="quiz-result">
+      <div class="qr-score-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="qr-circle-bg" cx="50" cy="50" r="40"/>
+          <circle class="qr-circle-fill" id="qr-circle" cx="50" cy="50" r="40"/>
+        </svg>
+        <div class="qr-score-text">
+          <span class="qr-score-n" id="qr-n">0</span>
+          <span class="qr-score-l">pontos</span>
+        </div>
+      </div>
+      <div class="qr-h" id="qr-h"></div>
+      <div class="qr-msg" id="qr-msg"></div>
+      <div class="qr-breakdown" id="qr-breakdown"></div>
+      <div class="qr-actions">
+        <button class="btn-retry" onclick="resetQuiz()">↺ Refazer</button>
+        <button class="btn-center" onclick="navigate('dash')" style="flex:1">← Início</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS ══ -->
+  <div class="screen" id="screen-settings">
+    <div class="sett-s">
+      <div class="sett-title">Configurações</div>
+      <label class="sett-label">Webhook n8n → Google Sheets</label>
+      <input class="sett-input" id="n8n-url" type="url" placeholder="https://seu-n8n.app/webhook/...">
+      <div class="sett-hint">Sincroniza progresso e resultados do quiz com seu Sheets automaticamente.</div>
+      <button class="sett-btn" onclick="saveSettings()">Salvar</button>
+      <div class="sync-st" id="sync-st"></div>
+      <div class="divider"></div>
+      <button class="sett-btn" onclick="syncNow()">↑ Sincronizar agora</button>
+      <div class="divider"></div>
+      <button class="sett-btn danger" onclick="resetAll()">⚠ Resetar progresso</button>
+      <div class="divider"></div>
+      <div class="app-ver">FinanceMestre v1.0<br>Guia completo de finanças pessoais brasileiras<br>Dados locais · Sem rastreamento</div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-dash" onclick="navigate('dash')"><span class="ni">💰</span><span>Início</span></button>
+    <button class="nav-btn" id="nav-study" onclick="navigate('study')"><span class="ni">📖</span><span>Estudar</span></button>
+    <button class="nav-btn" id="nav-review" onclick="navigate('review')"><span class="ni">🔁</span><span>Revisar</span></button>
+    <button class="nav-btn" id="nav-quiz" onclick="navigate('quiz')"><span class="ni">🏆</span><span>Quiz</span></button>
+    <button class="nav-btn" id="nav-settings" onclick="navigate('settings')"><span class="ni">⚙</span><span>Config</span></button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//                    CARDS DATA
+// ═══════════════════════════════════════════════════
+const CARDS = [
+  // ── FUNDAMENTOS ──────────────────────────────────
+  {
+    id:'fun-01', category:'Fundamentos', emoji:'🏦', color:'#00c896',
+    title:'Controle financeiro — o ponto de partida',
+    lead:'Anote tudo que entra e tudo que sai por 30 dias. Sem exceção. A maioria das pessoas se surpreende com o que descobre.',
+    content:`O ponto de partida de qualquer construção financeira é entender exatamente onde você está. Sem isso, qualquer estratégia avançada vai falhar.
+
+A regra mais simples que funciona: gaste menos do que ganha e invista a diferença. Parece óbvio — mas 70% dos brasileiros gastam tudo que ganham ou mais, segundo a Confederação Nacional do Comércio.
+
+Aquele café de R$ 8 por dia são R$ 2.920 por ano. Os gastos pequenos que somam fortunas costumam ser mais destruidores que as compras grandes — porque são invisíveis.`,
+    keyPoints:[
+      'Método 50/30/20: 50% necessidades · 30% desejos · 20% investimentos',
+      'Pague-se primeiro: transfira o valor do investimento antes de pagar contas',
+      'Apps úteis: Mobills, Organizze, ou planilha simples do Google Sheets',
+      'Revise finanças 1h por mês — pode ser a hora mais rentável do mês',
+      'Comece com 5% de poupança e suba 1% todo mês até chegar em 20%',
+    ],
+    apply:'Esta semana: anote TUDO que gastar por 7 dias. Sem julgamento, só observação. No 8º dia, some por categoria e encontre os 3 maiores vazamentos. Isso é o diagnóstico que toda mudança precisa.',
+    question:'O que é o método 50/30/20 e como o hábito de "pagar-se primeiro" muda a lógica financeira?'
+  },
+  {
+    id:'fun-02', category:'Fundamentos', emoji:'🏦', color:'#00c896',
+    title:'Hábitos financeiros saudáveis',
+    lead:'Finanças são 20% técnica e 80% comportamento. Você pode saber tudo e ainda assim quebrar por causa de emoção.',
+    content:`Os hábitos financeiros mais poderosos não são sofisticados — são consistentes. A automação é a maior aliada: quando você não precisa decidir transferir dinheiro a cada mês, a disciplina deixa de ser necessária.
+
+Orçamento base zero: cada real da sua renda tem destino definido antes do mês começar. Não há "dinheiro sobrando para gastar" — há dinheiro com destino definido ou não definido (e esse vai para investimento).
+
+O inimigo silencioso é a inflação do estilo de vida: a cada aumento de renda, o padrão de vida sobe no mesmo ritmo. Resultado: mais renda, mesmo patrimônio. A regra é: no próximo aumento, invista pelo menos 50% do valor novo.`,
+    keyPoints:[
+      'Automação: débito automático para investimentos no dia do salário',
+      'Inflação do estilo de vida: o maior ladrão silencioso de patrimônio',
+      'Orçamento base zero: todo real tem destino antes do mês começar',
+      'Regra do aumento: invista 50% de qualquer incremento de renda',
+      'Revisão mensal de extratos: identifica gastos esquecidos (assinaturas, etc.)',
+    ],
+    apply:'Liste todas as suas assinaturas recorrentes: streaming, apps, serviços. Some o total mensal e o anual. Cancele aquelas que não usa com frequência. O dinheiro liberado vai direto para investimento.',
+    question:'O que é orçamento base zero e como evitar a armadilha da inflação do estilo de vida quando a renda aumenta?'
+  },
+
+  // ── JUROS ────────────────────────────────────────
+  {
+    id:'jur-01', category:'Juros', emoji:'📈', color:'#3d9be9',
+    title:'Juros compostos — a oitava maravilha',
+    lead:'Einstein teria chamado de "a oitava maravilha do mundo". Os bancos brasileiros sabem disso muito bem — e usam contra você.',
+    content:`Juros simples calculam sempre sobre o valor original. Juros compostos calculam sobre o valor atualizado, incluindo os juros anteriores. Aqui a matemática fica impressionante.
+
+R$ 1.000 a 10% ao ano: em 10 anos com juros simples = R$ 2.000. Com juros compostos = R$ 2.594. Em 30 anos: simples = R$ 4.000. Compostos = R$ 17.449. A diferença é de mais de R$ 13.000 em cima de R$ 1.000.
+
+A Regra dos 72: divida 72 pela taxa de juros e descubra em quantos anos seu dinheiro dobra. A 6%: 12 anos. A 12%: 6 anos. A 1% ao mês: ~6 anos. No cartão a 430% ao ano: seu dinheiro dobra como dívida em menos de 3 meses.`,
+    keyPoints:[
+      'Juros compostos: incidem sobre principal + juros anteriores',
+      'Regra dos 72: 72 ÷ taxa = anos para dobrar o capital',
+      'Reinvestir rendimentos é fundamental — não saque os juros',
+      'Tempo é mais valioso que valor: começar cedo supera começar grande',
+      'R$ 500/mês por 30 anos a 10% a.a. = R$ 1.130.000',
+    ],
+    apply:'Use a Regra dos 72: pegue a rentabilidade do seu investimento atual e divida por 72. Quanto tempo leva para dobrar? Agora faça o mesmo com uma dívida que você tem. O resultado vai motivar tanto quitar quanto investir.',
+    question:'Qual a diferença entre juros simples e compostos e como funciona a Regra dos 72 para calcular o tempo de dobramento do capital?'
+  },
+  {
+    id:'jur-02', category:'Juros', emoji:'📈', color:'#3d9be9',
+    title:'Juros contra você — o lado que os bancos não explicam',
+    lead:'O cartão de crédito brasileiro cobra em média 430% ao ano no rotativo. R$ 1.000 nessa dívida por 1 ano = R$ 5.300.',
+    content:`As taxas de juros praticadas no Brasil para pessoa física estão entre as mais altas do mundo. Entender isso não é teoria — é autodefesa financeira.
+
+Rotativo do cartão: 430% ao ano (média). Cheque especial: 130% ao ano. Crédito pessoal bancário: 80 a 150% ao ano. Consignado público: 20 a 30% ao ano (o mais barato para quem tem acesso).
+
+A armadilha do parcelamento: o brasileiro ama parcela. "Só R$ 150 por mês!" — mas em 12 vezes com juros embutidos de 3% ao mês, R$ 1.500 se tornam R$ 2.143. O lojista ganhou, o banco ganhou, e você pagou o dobro.
+
+Regra de ouro: nunca financie consumo. Carro, eletrônico, roupa, viagem — se não tem dinheiro, não compra agora. Dívida boa é a que compra ativo que vale mais que os juros pagos.`,
+    keyPoints:[
+      'Rotativo cartão: ~430% ao ano — o mais caro do Brasil',
+      'Cheque especial: armadilha de 130% ao ano para quem usa "só alguns dias"',
+      'Parcelamento com juros: sempre calcule o valor total, não só a parcela',
+      'CET (Custo Efetivo Total): o número real de qualquer crédito — exija antes de assinar',
+      'Estratégia bola de neve: quite dívidas menores primeiro para ganhar motivação e fluxo',
+    ],
+    apply:'Liste todas as suas dívidas com: instituição, saldo devedor, taxa de juros mensal e valor da parcela. Ordene da mais cara para a mais barata. Sua prioridade de pagamento antecipado é essa lista — da mais cara para baixo.',
+    question:'Quais são as principais taxas de juros cobradas no Brasil para pessoa física e por que o parcelamento pode ser uma armadilha oculta?'
+  },
+
+  // ── IMPOSTOS ─────────────────────────────────────
+  {
+    id:'imp-01', category:'Impostos', emoji:'📋', color:'#f0c040',
+    title:'PF vs PJ — A diferença que pode valer R$ 48.000 por ano',
+    lead:'Como pessoa física você pode pagar até 27,5% de IR. Como PJ bem estruturada, entre 6% e 15% sobre o faturamento.',
+    content:`A estrutura jurídica da sua renda é uma das decisões mais impactantes financeiramente. Profissionais liberais, consultores, prestadores de serviço e autônomos que não avaliam isso estão pagando imposto desnecessário.
+
+Pessoa Física (CLT ou autônomo): IR progressivo até 27,5% + INSS até 14%. Total pode passar de 35% da renda bruta.
+
+Pessoa Jurídica no Simples Nacional: alíquota única que varia de 6% a 19,5% dependendo da atividade e faturamento — e cobre vários impostos de uma vez.
+
+Distribuição de lucros: uma das maiores vantagens da PJ é que os lucros distribuídos ao sócio são isentos de IR para pessoa física. O pró-labore paga INSS e IR como qualquer salário. A estratégia: pró-labore baixo (mínimo previdenciário) + distribuição de lucros alta.`,
+    keyPoints:[
+      'MEI: até R$ 81.000/ano, valor fixo mensal (~R$ 70). Ideal para começar',
+      'Simples Nacional: até R$ 4,8 milhões/ano. Melhor para maioria dos prestadores',
+      'Lucros de PJ isentos de IR para o sócio: principal vantagem tributária',
+      'Pró-labore mínimo: base para INSS e IR — quanto menor, menos imposto',
+      'Holding familiar: para quem tem patrimônio — reduz imposto na herança',
+    ],
+    apply:'Se você presta serviços ou tem renda autônoma: calcule quanto pagou de IR e INSS nos últimos 12 meses. Busque um contador especializado em Simples Nacional e faça a comparação. A consulta geralmente se paga no primeiro mês.',
+    question:'Qual a principal diferença tributária entre pessoa física e pessoa jurídica e como a distribuição de lucros pode reduzir legalmente o imposto pago?'
+  },
+  {
+    id:'imp-02', category:'Impostos', emoji:'📋', color:'#f0c040',
+    title:'Imposto de Renda — Deduções que você provavelmente está ignorando',
+    lead:'Despesas médicas, dependentes, PGBL: são deduções legais que a maioria das pessoas não usa corretamente.',
+    content:`A declaração do IRPF tem dois modelos: simplificado (desconto padrão de 20%) e completo (deduz despesas reais). Quem tem gastos médicos, dependentes ou contribui para PGBL geralmente se beneficia mais pelo modelo completo.
+
+Deduções que reduzem a base de cálculo: despesas médicas integralmente (médico, dentista, hospital, plano de saúde — guarde TODAS as notas); dependentes (R$ 2.275 por pessoa); educação até R$ 3.561 por pessoa; previdência oficial (INSS) e PGBL (até 12% da renda bruta).
+
+PGBL vs VGBL: PGBL é para quem faz declaração completa — deduz até 12% da renda, pagando IR só no resgate. VGBL é para quem usa o modelo simplificado — sem dedução, mas IR só sobre rendimentos. Escolher errado pode custar milhares por ano.
+
+Guarde comprovantes de despesas médicas por 5 anos — a Receita Federal pode pedir.`,
+    keyPoints:[
+      'PGBL deduz até 12% da renda bruta tributável — apenas no modelo completo',
+      'Despesas médicas: sem limite de dedução — guarde toda nota/recibo',
+      'Dependentes: R$ 2.275,08 de dedução por pessoa declarada',
+      'Carnê-leão: obrigatório para autônomo com renda acima do limite mensal',
+      'Declaração em atraso: multa mínima de R$ 165,74 — não vale o risco',
+    ],
+    apply:'Abra sua última declaração de IR e verifique: você declarou todas as despesas médicas? Declarou todos os dependentes possíveis? Contribuiu para PGBL? Cada um desses itens pode gerar restituição ou reduzir imposto a pagar.',
+    question:'Qual a diferença entre modelo simplificado e completo no IR, o que é dedutível e como o PGBL pode reduzir legalmente o imposto?'
+  },
+
+  // ── PATRIMÔNIO ───────────────────────────────────
+  {
+    id:'pat-01', category:'Patrimônio', emoji:'🏛️', color:'#e07a30',
+    title:'Ativos vs Passivos — a distinção que muda tudo',
+    lead:'Ativo coloca dinheiro no seu bolso. Passivo tira dinheiro do seu bolso. Simples assim — mas a maioria confunde os dois.',
+    content:`Robert Kiyosaki popularizou essa distinção em Pai Rico, Pai Pobre: a maioria das pessoas passa a vida acumulando passivos achando que são ativos — especialmente o carro e a casa própria.
+
+O carro que você comprou é um passivo: IPVA, seguro, combustível, manutenção, depreciação de 20% no primeiro ano. Uma renda extra que você criou é um ativo. Um imóvel que aluga é ativo. Um imóvel que você financia para morar paga prestação — é passivo, mesmo que valorize.
+
+O caminho é sequencial: quitar dívidas caras → montar reserva de emergência → investir em ativos que rendem → usar renda dos ativos para comprar mais ativos → só então melhorar o estilo de vida com os rendimentos.`,
+    keyPoints:[
+      'Ativo: gera renda ou valoriza → FII, ação, negócio, imóvel alugado',
+      'Passivo: gera despesa → carro financiado, casa própria com hipoteca, cartão',
+      'Casa própria pode ser ativo — se o aluguel recebido supera as despesas',
+      'Objetivo: ter renda de ativos maior que despesas = liberdade financeira',
+      'Patrimônio líquido = total de ativos − total de passivos',
+    ],
+    apply:'Faça o balanço pessoal: liste todos os seus ativos (o que você tem) e passivos (o que você deve). Calcule o patrimônio líquido. Agora identifique: qual passivo é mais urgente quitar? Qual ativo você pode começar a construir?',
+    question:'Qual a diferença entre ativo e passivo segundo Kiyosaki e por que um carro e uma casa própria financiada são tecnicamente passivos?'
+  },
+  {
+    id:'pat-02', category:'Patrimônio', emoji:'🏛️', color:'#e07a30',
+    title:'Construção de patrimônio — consistência bate talento',
+    lead:'Investir R$ 500/mês por 30 anos supera quem investe R$ 5.000/mês por 5 anos. O tempo é o único recurso que não se compra de volta.',
+    content:`A consistência na construção de patrimônio tem um resultado matematicamente superior ao talento ou ao timing perfeito. O investidor que nunca para supera o genial que fica de fora esperando a hora certa.
+
+Dollar-cost averaging (preço médio): investir um valor fixo todo mês, independente do mercado. Quando o mercado cai, você compra mais cotas baratas. Quando sobe, seu patrimônio cresce. No longo prazo, essa estratégia supera a tentativa de acertar o momento de entrada.
+
+Efeito multiplicador: a renda dos seus investimentos, quando reinvestida, passa a gerar renda também. Isso é o ponto de inflexão da construção de patrimônio — quando seus ativos trabalham tanto quanto você. No Brasil, é possível viver de renda com patrimônio entre R$ 1,5 e R$ 3 milhões dependendo do padrão de vida.`,
+    keyPoints:[
+      'Preço médio: invista todo mês sem tentar adivinhar o mercado',
+      'Taxa de poupança é mais importante que valor do salário',
+      'Reinvestir rendimentos: o combustível dos juros compostos',
+      'Ponto de liberdade: renda passiva ≥ despesas mensais',
+      'R$ 500/mês × 30 anos × 10% a.a. = R$ 1.130.000',
+    ],
+    apply:'Calcule seu prazo para a liberdade financeira: some suas despesas mensais e multiplique por 300 (regra dos 4% ao ano de retirada). Esse é o patrimônio alvo. Divida por quanto você poupa por mês e estime o tempo. Isso torna o objetivo concreto.',
+    question:'Por que consistência supera timing na construção de patrimônio e o que é o método do preço médio (dollar-cost averaging)?'
+  },
+
+  // ── INVESTIMENTOS ────────────────────────────────
+  {
+    id:'inv-01', category:'Investimentos', emoji:'💹', color:'#9b72d4',
+    title:'Renda fixa — o ponto de partida seguro',
+    lead:'São investimentos onde a regra de remuneração é conhecida na aplicação. Mais previsíveis, menos voláteis — ideais para reserva e objetivos de curto prazo.',
+    content:`Renda fixa não significa retorno fixo em todos os casos — significa que a regra de remuneração é pré-definida. Pode ser prefixada (taxa conhecida hoje), pós-fixada (segue CDI/SELIC) ou híbrida (IPCA + taxa).
+
+Tesouro Direto: título do governo federal — o mais seguro do Brasil. Modalidades: Tesouro Selic (liquidez diária, ideal para reserva), Tesouro IPCA+ (protege contra inflação, ideal para longo prazo), Tesouro Prefixado (taxa fechada hoje, bom quando SELIC está alta e vai cair).
+
+CDB vs LCI vs LCA: todos são emitidos por bancos. CDB paga IR (tabela regressiva: 22,5% até 15%). LCI e LCA são isentas de IR para pessoa física. Um LCA a 90% do CDI pode render mais líquido que um CDB a 100% do CDI — sempre calcule o rendimento líquido.`,
+    keyPoints:[
+      'Tesouro Selic: liquidez diária, zero risco de perda — para reserva de emergência',
+      'Tesouro IPCA+: protege contra inflação — para objetivos de longo prazo',
+      'LCI/LCA isentas de IR — compare sempre o retorno líquido com CDB',
+      'FGC: garante até R$ 250.000 por CPF por instituição em CDB/LCI/LCA',
+      'IR regressivo: de 22,5% (até 180 dias) a 15% (acima de 720 dias)',
+    ],
+    apply:'Abra o Tesouro Direto (tesouro.gov.br) e invista qualquer valor em Tesouro Selic. Até R$ 30 já serve para criar o hábito. Compare o rendimento anual do Tesouro Selic com a sua poupança atual — a diferença vai motivar a migração.',
+    question:'Quais são as diferenças entre Tesouro Selic, IPCA+ e Prefixado, e por que LCI/LCA podem render mais que CDB mesmo com taxa menor?'
+  },
+  {
+    id:'inv-02', category:'Investimentos', emoji:'💹', color:'#9b72d4',
+    title:'Renda variável — onde o patrimônio acelera',
+    lead:'Sem garantia de retorno no curto prazo, mas com maior potencial no longo prazo. Bolsa brasileira rendeu 10 a 15% ao ano nominal historicamente.',
+    content:`Renda variável não significa perder dinheiro — significa volatilidade no curto prazo. No longo prazo (10+ anos), ações e FIIs historicamente superam renda fixa na maioria dos mercados.
+
+Ações: fração de uma empresa listada em bolsa. Ganhos via dividendos (lucros distribuídos) e valorização. O imposto é 15% sobre o lucro líquido nas vendas acima de R$ 20.000 por mês — abaixo disso, isento.
+
+Fundos Imobiliários (FIIs): investe em imóveis via bolsa, com baixo valor inicial. Rendimentos mensais isentos de IR para pessoa física. Um FII de logística bem gerido pode pagar 0,7% a 1% ao mês de dividendos. Volatilidade menor que ações.
+
+ETFs (fundos de índice): replicam um índice (IBOVESPA, S&P 500) com taxa baixíssima (0,1 a 0,5%). Forma mais simples de ter exposição diversificada sem selecionar ações. Ideal para iniciantes em renda variável.`,
+    keyPoints:[
+      'Ações: isento de IR em vendas até R$ 20.000/mês. Acima: 15% sobre lucro',
+      'FIIs: dividendos mensais isentos de IR para pessoa física',
+      'ETFs: diversificação automática com taxa baixa — ideal para começar',
+      'DCA na bolsa: aportes mensais fixos independente do preço',
+      'Nunca invista em renda variável dinheiro que precisará em menos de 3 anos',
+    ],
+    apply:'Abra conta em corretora com taxa zero (XP, Rico, Clear, Inter, Nuinvest). Com R$ 100 já é possível comprar cotas de FII ou ETF. Comece pequeno, aprenda operacionalmente, e aumente o aporte gradualmente com confiança.',
+    question:'Qual a diferença entre ações, FIIs e ETFs em termos de funcionamento, tributação e adequação para diferentes perfis de investidor?'
+  },
+
+  // ── PROTEÇÃO ─────────────────────────────────────
+  {
+    id:'pro-01', category:'Proteção', emoji:'🛡️', color:'#e05252',
+    title:'Reserva de emergência — a fundação de tudo',
+    lead:'Antes de qualquer investimento sofisticado, você precisa de 3 a 6 meses de despesas em lugar líquido e seguro.',
+    content:`A reserva de emergência é o alicerce de toda construção financeira. Sem ela, qualquer imprevisto — demissão, doença, conserto do carro — vira dívida cara que destrói anos de progresso.
+
+Para empregado CLT estável: 3 meses de despesas. Para autônomos, freelancers ou renda variável: 6 a 12 meses. Para empresários: 12 meses.
+
+Onde guardar: Tesouro Selic ou CDB de liquidez diária em banco grande. O critério é claro: preciso amanhã, tenho amanhã. Não em poupança (rende menos que CDI). Não em fundo com carência. Não em renda variável.
+
+A armadilha da reserva na poupança: com SELIC alta (como em 2024), a poupança rende 70% da SELIC = ~9,1% ao ano. O Tesouro Selic rende ~100% da SELIC = ~13,25% ao ano. Em R$ 30.000, a diferença é de mais de R$ 1.200 por ano.`,
+    keyPoints:[
+      'CLT estável: 3 meses · Autônomo: 6-12 meses · Empresário: 12 meses',
+      'Tesouro Selic ou CDB diário: liquidez imediata + máxima segurança',
+      'Poupança perde para o Tesouro Selic — especialmente com SELIC alta',
+      'Monte a reserva antes de qualquer investimento em renda variável',
+      'Reserva não é investimento — é seguro. Não otimize, priorize liquidez',
+    ],
+    apply:'Calcule sua reserva ideal: some todas as despesas mensais (aluguel, alimentação, contas, transporte) e multiplique por 3, 6 ou 12 dependendo do seu perfil. Esse é o valor que você precisa em Tesouro Selic. Quanto falta? Defina um prazo para completar.',
+    question:'Qual o tamanho ideal da reserva de emergência para diferentes perfis e por que Tesouro Selic supera poupança para essa finalidade?'
+  },
+  {
+    id:'pro-02', category:'Proteção', emoji:'🛡️', color:'#e05252',
+    title:'Seguros e diversificação — proteção do que você construiu',
+    lead:'Seguro não é gasto — é proteção de patrimônio. Perder tudo por não ter seguro adequado desfaz anos de construção em um evento.',
+    content:`A diversificação é o único "almoço grátis" das finanças: ao combinar ativos que não se movem juntos, você reduz o risco total sem necessariamente reduzir o retorno esperado.
+
+Seguros que valem: seguro de vida (essencial se você tem dependentes — custo baixo, cobertura alta), plano de saúde (saúde pública é imprevisível — o plano é um dos melhores investimentos), seguro do carro (se o carro tem valor relevante ou está financiado).
+
+Seguros que não valem: capitalização (mistura ruim de seguro com investimento péssimo — rendimento menor que poupança), seguro de eletrônicos, seguro prestamista do cartão.
+
+Diversificação prática: diferentes classes (renda fixa, ações, FIIs), diferentes moedas (parte em dólar via ETF internacional ou Tesouro IPCA+), diferentes instituições (não deixe tudo em um único banco).`,
+    keyPoints:[
+      'Seguro de vida: cobertura de R$ 500.000 pode custar R$ 100-200/mês para adulto jovem',
+      'Capitalização: proibida em países desenvolvidos — rendimento abaixo da inflação',
+      'FGC garante R$ 250.000 por CPF por instituição — distribua se tiver mais',
+      'Dólar como reserva: proteção contra desvalorização do real (ETF IVVB11 ou BDRs)',
+      'Testamento digital: organize senhas e ativos digitais — família precisa saber',
+    ],
+    apply:'Verifique seus seguros ativos: você tem seguro de vida com cobertura adequada para seus dependentes? Está pagando por seguros que não precisam (capitalização, seguro de celular)? Cancele o desnecessário e use o dinheiro no necessário.',
+    question:'Como funciona a diversificação financeira e quais seguros realmente valem a contratação no Brasil?'
+  },
+
+  // ── COMPORTAMENTO ────────────────────────────────
+  {
+    id:'comp-01', category:'Comportamento', emoji:'🧠', color:'#2dc4b2',
+    title:'Comportamento financeiro — o que sabotagem e status custam',
+    lead:'A maior ameaça ao patrimônio não é a inflação — é o desejo de parecer rico antes de ser rico.',
+    content:`Finanças são 20% técnica e 80% psicologia. Você pode dominar todas as estratégias e ainda assim quebrar por causa de vieses cognitivos e armadilhas emocionais.
+
+Lifestyle creep (inflação do estilo de vida): cada aumento de renda é imediatamente absorvido por aumento de padrão. Sem perceber, você continua no mesmo lugar financeiro independente de quanto ganha. A solução: automatize o investimento antes de sentir o dinheiro novo.
+
+O efeito de ancoragem: "era R$ 800, agora está R$ 500 — que pechincha!" Você economizou R$ 300 ou gastou R$ 500 desnecessários? O marketing usa âncoras para fazer você se sentir ganhando quando está gastando.
+
+Gratificação adiada: pesquisa do Marshmallow de Walter Mischel (anos 60) mostrou que crianças capazes de esperar tinham melhores resultados educacionais, financeiros e de saúde décadas depois. É uma habilidade treinável.`,
+    keyPoints:[
+      'Viés de disponibilidade: superestimamos o que está fresco na memória (crash recente = pânico)',
+      'Efeito manada: comprar na alta e vender na baixa porque "todos estão fazendo"',
+      'FOMO financeiro: medo de perder oportunidade leva a decisões impulsivas',
+      'Âncora de preço: referência artificial que distorce percepção de valor',
+      'Automatizar é superior a depender de disciplina — remova a decisão da equação',
+    ],
+    apply:'Identifique seu maior padrão sabotador: comprar impulsivamente, gastar quando está triste, comparar com outros. Por 30 dias, antes de qualquer compra acima de R$ 100, espere 48 horas. Veja quantas compras você deixa de fazer.',
+    question:'O que é lifestyle creep, quais são os principais vieses cognitivos que afetam decisões financeiras e como a automação resolve o problema da disciplina?'
+  },
+  {
+    id:'comp-02', category:'Comportamento', emoji:'🧠', color:'#2dc4b2',
+    title:'Pensamento de longo prazo — a habilidade mais rara e valiosa',
+    lead:'O investidor médio compra na euforia e vende no pânico. Sempre perde. A solução é tirar a emoção da equação com automação e estratégia.',
+    content:`O mercado vai cair. Isso é garantido — e quando cair, parecerá que o mundo está acabando. Esse é exatamente o momento de não fazer nada, ou de comprar mais. A maioria faz o oposto.
+
+Pensamento de longo prazo é escasso porque o cérebro humano evoluiu para o curto prazo. Nossos ancestrais não precisavam pensar em 30 anos. Redes sociais, noticiário e mercado financeiro amplificam o imediatismo.
+
+Como treinar: torne o futuro concreto e emocional. Quanto você quer ter em 10 anos? Que vida isso representaria? Escreva. Revise mensalmente. Conecte cada decisão presente a essa imagem futura.
+
+O investidor que mais rendeu na história da Fidelity em um estudo interno era um cliente que havia morrido e esquecido a conta. Segundo lugar: os que esqueciam que tinham investimentos. A inação inteligente bate o "faça alguma coisa" na maioria dos casos.`,
+    keyPoints:[
+      'Volatilidade é amiga do investidor de longo prazo — compra mais barato nas quedas',
+      'Tempo no mercado supera timing do mercado — estudo após estudo confirma',
+      'Diário financeiro: registre decisões e raciocínios — aprenda com seus erros',
+      'Mentor ou grupo: accountability acelera a construção de hábitos financeiros',
+      'Leitura mensal: 1 livro de finanças por mês muda a perspectiva ao longo do ano',
+    ],
+    apply:'Escreva sua meta financeira de 10 anos de forma específica: "Em [data], terei R$ [X] de patrimônio investido, gerando R$ [Y] de renda passiva mensal." Cole no celular. Leia toda vez que tiver impulso de gastar desnecessariamente.',
+    question:'Por que o pensamento de curto prazo é o inimigo número 1 do patrimônio e quais estratégias concretas ajudam a manter foco no longo prazo?'
+  },
+
+  // ── ERROS COMUNS ─────────────────────────────────
+  {
+    id:'err-01', category:'Erros Comuns', emoji:'⚠️', color:'#c45c2d',
+    title:'Os erros que destroem patrimônio antes de ele existir',
+    lead:'Gastar mais do que ganha é o único erro que garante fracasso. Não importa a renda — é a diferença entre entrada e saída que define o destino.',
+    content:`O erro mais comum e mais destruidor é simples: gastar mais do que ganha. Parece óbvio, mas existem pessoas com salário de R$ 50.000/mês falidas — e pessoas com salário de R$ 3.000/mês com patrimônio real. A diferença é taxa de poupança, não renda.
+
+Ignorar impostos é jogar dinheiro fora: não declarar corretamente, não aproveitar deduções legais, não estruturar adequadamente a renda como PJ quando cabível. Um contador que custa R$ 200/mês pode economizar R$ 2.000/mês em impostos — ROI de 900%.
+
+Cair em promessas de retorno alto com segurança: se alguém promete 5% ao mês com garantia, é fraude. Sempre. A SELIC em 13% ao ano é o que o governo paga. Retorno acima de 1,5% ao mês com qualquer garantia é impossível ou ilegal.
+
+Falta de planejamento: não ter orçamento, não calcular a aposentadoria, não fazer testamento, não revisar seguros. A vida financeira sem planejamento é como empresa sem gestão — quebra mais cedo ou mais tarde.`,
+    keyPoints:[
+      'Pirâmide financeira: fraude com estrutura de pirâmide — fuja de qualquer "comunidade de investimentos"',
+      'Criptomoedas: ativo legítimo, mas altíssima volatilidade — nunca é garantia de retorno',
+      'Consórcio: sem juros, mas taxa de administração e sem liquidez — analise caso a caso',
+      'Imóvel na planta: risco construtora + iliquidez — não é investimento conservador',
+      'Título de capitalização: proibido em países sérios — rendimento abaixo da poupança',
+    ],
+    apply:'Faça o teste das promessas: alguém te indicou um investimento? Antes de aceitar, pesquise a empresa no site da CVM (cvmweb.cvm.gov.br), verifique se está autorizada, e pergunte: "Se isso é tão bom, por que você precisa de mim para ganhar dinheiro?"',
+    question:'Quais são os 4 erros mais comuns que destroem patrimônio e como identificar e fugir de esquemas fraudulentos de investimento?'
+  },
+];
+
+// ═══════════════════════════════════════════════════
+//                  QUIZ QUESTIONS
+// ═══════════════════════════════════════════════════
+const QUIZ = [
+  {
+    cat:'Fundamentos',
+    q:'No método 50/30/20, qual porcentagem deve ser destinada obrigatoriamente a investimentos e poupança?',
+    opts:['10%','15%','20%','30%'],
+    ans:2,
+    exp:'O método 50/30/20 reserva 20% da renda líquida para investimentos e reserva. Esse é o bloco intocável — o que vai construir seu futuro financeiro.',
+  },
+  {
+    cat:'Fundamentos',
+    q:'Qual é o hábito financeiro mais poderoso para garantir que o investimento aconteça todo mês?',
+    opts:['Guardar o que sobra no fim do mês','Pagar-se primeiro assim que receber o salário','Investir quando o mercado estiver em queda','Revisar os extratos semanalmente'],
+    ans:1,
+    exp:'"Pagar-se primeiro" significa transferir o valor do investimento antes de pagar qualquer conta. O que sobra é o que você tem para gastar — não o contrário. Isso transforma investimento de intenção em automação.',
+  },
+  {
+    cat:'Juros',
+    q:'Usando a Regra dos 72, em quantos anos um investimento a 9% ao ano dobra de valor?',
+    opts:['6 anos','8 anos','9 anos','12 anos'],
+    ans:1,
+    exp:'Regra dos 72: 72 ÷ taxa de juros = anos para dobrar. 72 ÷ 9 = 8 anos. Esta regra mental é poderosa para comparar investimentos rapidamente.',
+  },
+  {
+    cat:'Juros',
+    q:'Qual é a taxa média aproximada do rotativo do cartão de crédito no Brasil?',
+    opts:['50% ao ano','130% ao ano','250% ao ano','430% ao ano'],
+    ans:3,
+    exp:'O rotativo do cartão de crédito brasileiro cobra em média 430% ao ano — uma das taxas mais altas do mundo. R$ 1.000 nessa dívida por 1 ano se transforma em aproximadamente R$ 5.300.',
+  },
+  {
+    cat:'Juros',
+    q:'Qual a principal diferença entre juros simples e compostos?',
+    opts:['Juros simples são mais lucrativos para investimentos','Juros compostos incidem sobre principal + juros anteriores acumulados','Juros simples incidem sobre o total da dívida incluindo juros','Não há diferença no longo prazo'],
+    ans:1,
+    exp:'Juros compostos incidem sobre o montante atualizado (principal + juros já acumulados), gerando o efeito "bola de neve". Em 30 anos, R$ 1.000 a 10% a.a. rende R$ 17.449 com juros compostos vs. R$ 4.000 com juros simples.',
+  },
+  {
+    cat:'Impostos',
+    q:'Qual a principal vantagem tributária de distribuir lucros por uma Pessoa Jurídica ao sócio, em vez de receber tudo como pró-labore?',
+    opts:['Lucros distribuídos de PJ são isentos de IR para a pessoa física','Lucros distribuídos pagam alíquota reduzida de 10%','Não existe vantagem — ambos pagam a mesma alíquota','Lucros distribuídos são isentos apenas se reinvestidos'],
+    ans:0,
+    exp:'Lucros distribuídos de uma Pessoa Jurídica ao sócio são isentos de Imposto de Renda para a pessoa física — essa é a principal vantagem tributária. O pró-labore, como qualquer salário, paga INSS e IR. A estratégia: pró-labore mínimo + distribuição de lucros.',
+  },
+  {
+    cat:'Impostos',
+    q:'Qual produto de previdência privada permite dedução de até 12% da renda bruta no IR, mas apenas no modelo de declaração completo?',
+    opts:['VGBL','PGBL','CDB previdenciário','Tesouro Previdenciário'],
+    ans:1,
+    exp:'O PGBL (Plano Gerador de Benefício Livre) permite deduzir até 12% da renda bruta tributável na declaração completa do IR. O VGBL não tem essa dedução — é indicado para quem usa o modelo simplificado ou já atingiu o limite de 12%.',
+  },
+  {
+    cat:'Patrimônio',
+    q:'Segundo o conceito de Kiyosaki, um carro financiado comprado para uso próprio é considerado:',
+    opts:['Um ativo, pois tem valor de mercado','Um ativo, se for um carro de luxo que valoriza','Um passivo, pois gera despesas (IPVA, seguro, combustível, depreciação)','Neutro — depende da situação econômica'],
+    ans:2,
+    exp:'Um carro financiado para uso próprio é um passivo clássico: gera despesas contínuas (IPVA, seguro, combustível, manutenção) e deprecia em média 20-30% no primeiro ano. Mesmo sendo seu "bem", tira dinheiro do bolso todo mês.',
+  },
+  {
+    cat:'Patrimônio',
+    q:'Qual estratégia de investimento mensal supera a tentativa de "acertar o momento certo" do mercado no longo prazo?',
+    opts:['Investir grandes valores apenas em crises','Dollar-cost averaging: aportes fixos mensais independente do mercado','Esperar o mercado cair 20% antes de investir','Diversificar em 20+ ações para reduzir risco'],
+    ans:1,
+    exp:'Dollar-cost averaging (preço médio) consiste em investir um valor fixo mensalmente, independente do mercado. Quando o mercado cai, você compra mais cotas pelo mesmo valor. Quando sobe, seu patrimônio cresce. Estudos mostram que supera tentativas de timing em 90%+ dos casos no longo prazo.',
+  },
+  {
+    cat:'Investimentos',
+    q:'Para uma reserva de emergência, qual Tesouro Direto é mais indicado e por quê?',
+    opts:['Tesouro Prefixado — taxa garantida','Tesouro IPCA+ — proteção contra inflação','Tesouro Selic — liquidez diária e sem risco de perda','Tesouro Renda+ — melhor rentabilidade'],
+    ans:2,
+    exp:'O Tesouro Selic é o mais indicado para reserva de emergência por ter liquidez diária (pode resgatar a qualquer momento) e não ter risco de perda, pois acompanha a SELIC sem volatilidade. Tesouro Prefixado e IPCA+ podem ter perda se resgatados antes do vencimento.',
+  },
+  {
+    cat:'Investimentos',
+    q:'Qual a principal vantagem tributária dos Fundos Imobiliários (FIIs) para pessoas físicas?',
+    opts:['FIIs são isentos de IR em qualquer situação','Dividendos mensais de FIIs são isentos de IR para pessoa física','FIIs têm alíquota de IR reduzida a 10%','Ganho de capital na venda de FIIs é sempre isento'],
+    ans:1,
+    exp:'Os rendimentos (dividendos) distribuídos mensalmente pelos FIIs são isentos de IR para a pessoa física. Porém, o ganho de capital na venda das cotas é tributado em 20%. Essa isenção nos dividendos é a grande vantagem dos FIIs para quem busca renda passiva.',
+  },
+  {
+    cat:'Investimentos',
+    q:'Qual a alíquota de IR sobre lucro em venda de ações no mercado de bolsa, e quando ocorre isenção total?',
+    opts:['20% sempre, sem isenção','15% sobre o lucro; isento em vendas até R$ 20.000 no mês','15% sobre o lucro; isento em vendas até R$ 35.000 no mês','22,5% sobre o lucro; sem isenção'],
+    ans:1,
+    exp:'Ações no mercado à vista: 15% sobre o lucro líquido em vendas. Porém, se o total vendido no mês não ultrapassar R$ 20.000, há isenção total de IR. Esse limite de R$ 20.000 é por mês, não por operação — é uma das isenções mais vantajosas para o pequeno investidor.',
+  },
+  {
+    cat:'Proteção',
+    q:'Qual o tamanho recomendado da reserva de emergência para um profissional autônomo com renda variável?',
+    opts:['1 mês de despesas','3 meses de despesas','6 a 12 meses de despesas','Não precisa de reserva — basta ter cartão de crédito'],
+    ans:2,
+    exp:'Autônomos, freelancers e pessoas com renda variável devem ter 6 a 12 meses de despesas como reserva de emergência. A incerteza de renda justifica uma reserva maior. CLT estável: 3 meses. Empresários: 12 meses.',
+  },
+  {
+    cat:'Proteção',
+    q:'Qual tipo de seguro é considerado perda de dinheiro e é proibido ou fortemente desaconselhado em países financeiramente desenvolvidos?',
+    opts:['Seguro de vida com cobertura por morte','Seguro saúde empresarial','Capitalização — mistura de seguro com investimento de baixíssimo rendimento','Seguro de carro para veículos financiados'],
+    ans:2,
+    exp:'A capitalização é considerada um mau produto financeiro: mistura seguro com investimento, mas rende menos que a poupança (que já rende menos que o CDI). O prêmio do "sorteio" não compensa. É proibida em países como EUA e Reino Unido. O dinheiro investido em capitalização seria muito melhor em Tesouro Selic.',
+  },
+  {
+    cat:'Proteção',
+    q:'O FGC (Fundo Garantidor de Crédito) garante até quanto por CPF por instituição financeira em CDBs e LCIs?',
+    opts:['R$ 100.000','R$ 250.000','R$ 500.000','Sem limite'],
+    ans:1,
+    exp:'O FGC garante até R$ 250.000 por CPF por instituição financeira (banco) em produtos como CDB, LCI, LCA e poupança. Se você tiver mais que isso em um único banco, distribua entre diferentes instituições para manter toda a cobertura do FGC.',
+  },
+  {
+    cat:'Comportamento',
+    q:'O que é "lifestyle creep" (inflação do estilo de vida) e por que é um dos maiores inimigos do patrimônio?',
+    opts:['Aumento de gastos com saúde com a idade','Cada aumento de renda é absorvido imediatamente por aumento de padrão de vida — a poupança nunca cresce','Perda de poder de compra causada pela inflação oficial','Aumento de dívidas causado pelo uso excessivo do cartão'],
+    ans:1,
+    exp:'"Lifestyle creep" é quando cada aumento de renda é imediatamente absorvido por gastos maiores — carro melhor, apartamento maior, restaurantes mais caros. O resultado: mais renda, mesmo patrimônio. A solução é automatizar o investimento antes de sentir o dinheiro novo.',
+  },
+  {
+    cat:'Comportamento',
+    q:'Qual comportamento o investidor médio brasileiro adota que garante sistematicamente perda de retorno?',
+    opts:['Diversificar demais o portfólio','Comprar na euforia (preço alto) e vender no pânico (preço baixo)','Investir em renda fixa durante crises','Manter posições por mais de 5 anos sem revisar'],
+    ans:1,
+    exp:'O investidor médio compra quando o mercado está em alta (euforia, preço máximo) e vende quando está em queda (pânico, preço mínimo) — exatamente o oposto do ideal. Estudos da DALBAR mostram que o retorno médio do investidor é consistentemente menor que o retorno do índice justamente por esse comportamento.',
+  },
+  {
+    cat:'Erros Comuns',
+    q:'Se alguém oferece investimento com retorno garantido de 5% ao mês (60% ao ano), qual deve ser a resposta imediata?',
+    opts:['Investir apenas 10% para testar','Pedir mais detalhes sobre a estratégia','Recusar imediatamente — é fraude ou pirâmide financeira','Investir se a pessoa for conhecida e confiável'],
+    ans:2,
+    exp:'Retorno garantido de 5% ao mês (60% ao ano) é impossível de forma sustentável e legal. A SELIC — que o governo paga — estava em ~13% ao ano em 2024. Qualquer promessa de garantia acima de 1,5% ao mês é sinal claro de fraude, pirâmide financeira ou esquema Ponzi. Fuja sem negociar.',
+  },
+  {
+    cat:'Erros Comuns',
+    q:'Qual erro fiscal é cometido por autônomos que não fazem o carnê-leão mensalmente?',
+    opts:['Perdem o direito de declarar despesas médicas','Ficam irregulares com a Receita Federal e podem receber multa e juros','Perdem a isenção de IR sobre salários','Ficam impedidos de abrir CNPJ'],
+    ans:1,
+    exp:'O carnê-leão é obrigatório para autônomos que recebem rendimentos de pessoas físicas ou do exterior acima do limite mensal de isenção. Não pagar mensalmente gera irregularidade com a Receita, com cobrança de multa (0,33%/dia, até 20%) e juros SELIC. A regularização retroativa é mais cara que a prevenção.',
+  },
+  {
+    cat:'Erros Comuns',
+    q:'Qual é a principal razão pela qual pessoas de alta renda frequentemente têm menos patrimônio que pessoas de renda menor?',
+    opts:['Pagam mais impostos, o que reduz o saldo disponível','Gastam mais do que ganham — a taxa de poupança é zero independente do salário','Investem em produtos mais arriscados e perdem capital','A renda alta cria obrigações sociais que consomem todo o excedente'],
+    ans:1,
+    exp:'A variável decisiva é a taxa de poupança — a porcentagem da renda que vai para investimentos — não o valor absoluto do salário. Alguém que ganha R$ 50.000/mês e gasta tudo não constrói patrimônio. Alguém que ganha R$ 3.000/mês e investe 20% consistentemente por décadas acumula riqueza real.',
+  },
+];
+
+// ═══════════════════════════════════════════════════
+//                     STATE
+// ═══════════════════════════════════════════════════
+const SK = 'financemestre_v1';
+let ST = {cards:{}, streak:0, lastDate:null, n8nUrl:'', totalReviewed:0,
+  quizBest:0, quizHistory:[], quizAnswers:[]};
+
+let studyCat=null, studyQ=[], studyIdx=0;
+let revQ=[], revIdx=0, flipped=false;
+let quizOrder=[], quizIdx=0, quizCorrect=0, quizWrong=0, quizCatResults={};
+
+function loadST(){
+  try{const r=localStorage.getItem(SK);if(r)Object.assign(ST,JSON.parse(r));}catch(e){}
+  CARDS.forEach(c=>{if(!ST.cards[c.id])ST.cards[c.id]={interval:1,ease:2.5,nextRev:Date.now(),reps:0,lastRev:null,explanation:'',studied:false};});
+}
+function saveST(){
+  try{localStorage.setItem(SK,JSON.stringify(ST));}catch(e){}
+  if(ST.n8nUrl)syncN8n(false);
+}
+
+// ─── N8N ────────────────────────────────────────────
+async function syncN8n(loud=true){
+  if(!ST.n8nUrl){if(loud)setSyncSt('⚠ Configure o webhook.','#f0c040');return;}
+  if(loud)setSyncSt('Sincronizando…','var(--muted)');
+  const payload={source:'financemestre',timestamp:new Date().toISOString(),streak:ST.streak,totalReviewed:ST.totalReviewed,quizBest:ST.quizBest,
+    cards:CARDS.map(c=>{const cs=ST.cards[c.id];return{id:c.id,category:c.category,title:c.title,studied:cs.studied,reps:cs.reps,interval:cs.interval};})};
+  try{
+    const r=await fetch(ST.n8nUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(loud)r.ok?setSyncSt('✓ Sincronizado!','#00c896'):setSyncSt('✗ Erro na URL.','#e05252');
+  }catch(e){if(loud)setSyncSt('✗ Falha de conexão.','#e05252');}
+}
+function setSyncSt(m,c){const el=document.getElementById('sync-st');if(el){el.textContent=m;el.style.color=c;}}
+
+// ─── SM-2 ────────────────────────────────────────────
+function sm2(cs,r){
+  let{interval,ease,reps}=cs;
+  if(r===1){reps=0;interval=1;}
+  else if(r===2){interval=Math.max(1,Math.round(interval*1.2));ease=Math.max(1.3,ease-.15);reps++;}
+  else if(r===3){interval=reps===0?1:reps===1?3:Math.round(interval*ease);reps++;}
+  else{interval=reps===0?4:Math.round(interval*ease*1.3);ease=Math.min(3,ease+.1);reps++;}
+  return{interval,ease,reps,nextRev:Date.now()+interval*86400000,lastRev:Date.now()};
+}
+
+// ─── NAVIGATION ──────────────────────────────────────
+function navigate(sc){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+sc).classList.add('active');
+  const nb=document.getElementById('nav-'+sc);if(nb)nb.classList.add('active');
+  if(sc==='dash')renderDash();
+  if(sc==='study')startStudy();
+  if(sc==='review')startReview();
+  if(sc==='quiz')renderQuizIntro();
+}
+function goBack(to){navigate(to||'dash');}
+function goBackToStudy(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-study').classList.add('active');
+  const nb=document.getElementById('nav-study');if(nb)nb.classList.add('active');
+}
+
+// ─── DASHBOARD ───────────────────────────────────────
+function renderDash(){
+  document.getElementById('topDate').textContent=
+    new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}).toUpperCase();
+
+  const due=CARDS.filter(c=>ST.cards[c.id]?.nextRev<=Date.now()).length;
+  const mastered=CARDS.filter(c=>{const cs=ST.cards[c.id];return cs&&cs.reps>=3&&cs.interval>7;}).length;
+  document.getElementById('s-streak').textContent=ST.streak;
+  document.getElementById('s-mastered').textContent=mastered;
+  document.getElementById('s-due').textContent=due;
+  document.getElementById('s-quiz').textContent=ST.quizBest?ST.quizBest+'%':'—';
+
+  const aw=document.getElementById('alert-wrap');
+  let alerts='';
+  if(due>0) alerts+=`<div class="alert-box alert-rev" onclick="navigate('review')"><div class="ab-icon">🔔</div><div class="ab-info"><div class="ab-t green">${due} card${due>1?'s':''} para revisão</div><div class="ab-s">Repetição espaçada disponível</div></div><div class="ab-a">→</div></div>`;
+  alerts+=`<div class="alert-box alert-quiz" onclick="navigate('quiz')" style="cursor:pointer"><div class="ab-icon">🏆</div><div class="ab-info"><div class="ab-t gold">Quiz de 20 perguntas</div><div class="ab-s">${ST.quizBest?'Melhor pontuação: '+ST.quizBest+'%':'Teste seu conhecimento'}</div></div><div class="ab-a">→</div></div>`;
+  aw.innerHTML=alerts;
+
+  const cats={};
+  CARDS.forEach(c=>{if(!cats[c.category])cats[c.category]={cards:[],emoji:c.emoji,color:c.color};cats[c.category].cards.push(c);});
+  const cl=document.getElementById('cat-list');cl.innerHTML='';
+  Object.entries(cats).forEach(([name,d])=>{
+    const total=d.cards.length;
+    const studied=d.cards.filter(c=>ST.cards[c.id]?.studied).length;
+    const pct=Math.round(studied/total*100);
+    const el=document.createElement('div');
+    el.className='cat-item';el.style.setProperty('--c',d.color);
+    el.onclick=()=>{studyCat=name;navigate('study');};
+    el.innerHTML=`<div class="cat-em">${d.emoji}</div><div class="cat-info"><div class="cat-name">${name}</div><div class="cat-sub">${studied} de ${total} estudados</div><div class="bar"><div class="bar-fill" style="width:${pct}%;background:${d.color}"></div></div></div><div class="pct${pct===100?' done':''}">${pct}%</div>`;
+    cl.appendChild(el);
+  });
+}
+
+// ─── STUDY ───────────────────────────────────────────
+function startStudy(){
+  studyQ=studyCat?CARDS.filter(c=>c.category===studyCat):[...CARDS].sort((a,b)=>(ST.cards[a.id]?.studied?1:0)-(ST.cards[b.id]?.studied?1:0));
+  studyIdx=0;renderStudyCard();
+}
+function renderStudyCard(){
+  const card=studyQ[studyIdx];if(!card)return;
+  document.getElementById('study-prog').textContent=`${studyIdx+1} / ${studyQ.length}`;
+  document.getElementById('study-card-wrap').innerHTML=`
+    <div class="study-card">
+      <div class="sc-top"><span class="sc-cat">${card.emoji} ${card.category}</span></div>
+      <div class="sc-body">
+        <h2 class="sc-title">${card.title}</h2>
+        <div class="sc-lead">${card.lead}</div>
+        <div class="sc-content">${card.content.split('\n\n').map(p=>`<p>${p.trim()}</p>`).join('')}</div>
+      </div>
+    </div>`;
+  document.getElementById('study-kp').innerHTML=`<div class="kp-wrap"><div class="kp-label">Pontos essenciais</div>${card.keyPoints.map(p=>`<div class="kp"><span class="kp-dot">▶</span>${p}</div>`).join('')}</div>`;
+  document.getElementById('study-apply').innerHTML=`<div class="apply-box"><div class="apply-label">→ Aplicação imediata</div><div class="apply-text">${card.apply}</div></div>`;
+  document.getElementById('btn-next').textContent=studyIdx<studyQ.length-1?'Próximo →':'✓ Concluir';
+  if(!ST.cards[card.id].studied){ST.cards[card.id].studied=true;updateStreak();saveST();}
+  document.getElementById('screen-study').scrollTop=0;
+}
+function nextCard(){
+  if(studyIdx<studyQ.length-1){studyIdx++;renderStudyCard();}
+  else{studyCat=null;toast('✅ Módulo concluído!');navigate('dash');}
+}
+
+// ─── TEACH ───────────────────────────────────────────
+function goTeach(){
+  const card=studyQ[studyIdx];if(!card)return;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-teach').classList.add('active');
+  document.getElementById('teach-q').textContent=card.question;
+  const ta=document.getElementById('teach-ta');
+  ta.value=ST.cards[card.id]?.explanation||'';updateWC();
+  document.getElementById('fb-box').classList.remove('show');
+  ta.oninput=updateWC;
+}
+function updateWC(){const v=document.getElementById('teach-ta').value.trim();document.getElementById('wc').textContent=(v?v.split(/\s+/).length:0)+' palavras';}
+function clearTeach(){document.getElementById('teach-ta').value='';updateWC();document.getElementById('fb-box').classList.remove('show');}
+function submitTeach(){
+  const text=document.getElementById('teach-ta').value.trim();
+  const wds=text?text.split(/\s+/).length:0;
+  if(wds<10){toast('Escreva pelo menos 10 palavras!');return;}
+  const card=studyQ[studyIdx];
+  if(card){ST.cards[card.id].explanation=text;saveST();}
+  let score=0;const tl=text.toLowerCase();
+  score+=wds>=50?30:wds>=30?20:10;
+  if(card){let found=0;card.keyPoints.forEach(kp=>{const kws=kp.toLowerCase().split(' ').filter(w=>w.length>4);if(kws.some(k=>tl.includes(k)))found++;});score+=Math.round(found/card.keyPoints.length*45);}
+  if(/porque|pois|portanto|significa|representa|por isso|logo|então/.test(tl))score+=10;
+  if(/exemplo|por exemplo|como|na prática|real|no dia|cotidiano|hoje/.test(tl))score+=15;
+  score=Math.min(100,score);
+  const tips=[
+    'Conecte esse conceito a um número real da sua vida: quanto você economizaria ou ganharia aplicando isso?',
+    'Tente explicar para alguém da família usando um exemplo do dia a dia.',
+    'Qual ação concreta você tomará nos próximos 7 dias com base nesse conhecimento?',
+    'Quanto isso custou (ou pode custar) para você não saber antes? Calcule.',
+  ];
+  const levels=[[85,'💰','Excelente! Você demonstrou domínio real deste conceito financeiro.'],[65,'✅','Muito bom! Você captou o essencial. Agora aplique com um número real da sua vida.'],[45,'📝','Bom começo! Revise os pontos-chave e tente dar um exemplo concreto com valores reais.'],[0,'💪','Continue! Releia o card e tente de novo. Finanças ficam mais claras com repetição.']];
+  const [,emoji,txt]=levels.find(([min])=>score>=min);
+  document.getElementById('fb-score').textContent=`${emoji} ${score}/100`;
+  document.getElementById('fb-text').textContent=txt;
+  document.getElementById('fb-tip').textContent=tips[Math.floor(Math.random()*tips.length)];
+  document.getElementById('fb-box').classList.add('show');
+  document.getElementById('fb-box').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ─── REVIEW ──────────────────────────────────────────
+function startReview(){
+  revQ=CARDS.filter(c=>ST.cards[c.id]?.nextRev<=Date.now()).sort((a,b)=>ST.cards[a.id].nextRev-ST.cards[b.id].nextRev);
+  revIdx=0;flipped=false;
+  document.getElementById('rev-done').classList.remove('show');
+  document.getElementById('flip-wrap').style.display='block';
+  document.getElementById('rating-area').classList.remove('show');
+  if(!revQ.length){showRevDone();return;}
+  renderRevCard();
+}
+function renderRevCard(){
+  const card=revQ[revIdx];if(!card){showRevDone();return;}
+  flipped=false;
+  document.getElementById('flip-wrap').classList.remove('flipped');
+  document.getElementById('rating-area').classList.remove('show');
+  document.querySelectorAll('.rbt').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('rev-prog').textContent=`${revIdx+1} / ${revQ.length}`;
+  document.getElementById('rev-q').textContent=card.question;
+  const cs=ST.cards[card.id];
+  document.getElementById('rev-ans').innerHTML=`
+    <div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;">${card.emoji} ${card.category}</div>
+    <div style="font-size:12px;color:var(--green);margin-bottom:13px;padding:10px 13px;background:var(--green-g);border-left:2px solid var(--green);border-radius:0 5px 5px 0;line-height:1.6">${card.lead}</div>
+    <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;">Pontos essenciais</div>
+    ${card.keyPoints.map(p=>`<div style="display:flex;gap:8px;margin-bottom:7px;font-size:12px;line-height:1.5"><span style="color:var(--green);flex-shrink:0">▶</span>${p}</div>`).join('')}
+    <div style="margin-top:11px;font-size:9px;color:var(--muted)">Revisões: ${cs.reps} · Próxima em: ${cs.interval}d</div>`;
+}
+function flipCard(){if(flipped)return;flipped=true;document.getElementById('flip-wrap').classList.add('flipped');setTimeout(()=>document.getElementById('rating-area').classList.add('show'),380);}
+function rateCard(r){
+  const card=revQ[revIdx];if(!card)return;
+  const upd=sm2(ST.cards[card.id],r);
+  ST.cards[card.id]={...ST.cards[card.id],...upd};
+  ST.totalReviewed++;updateStreak();saveST();
+  document.querySelectorAll('.rbt').forEach(b=>b.classList.remove('sel'));
+  document.querySelector(`.rbt.r${r}`)?.classList.add('sel');
+  setTimeout(()=>{revIdx++;if(revIdx>=revQ.length)showRevDone();else renderRevCard();},380);
+}
+function showRevDone(){
+  document.getElementById('flip-wrap').style.display='none';
+  document.getElementById('rating-area').classList.remove('show');
+  document.getElementById('rev-done').classList.add('show');
+  toast('✅ Revisão concluída!');updateStreak();saveST();
+}
+
+// ═══════════════════════════════════════════════════
+//                  QUIZ ENGINE
+// ═══════════════════════════════════════════════════
+function renderQuizIntro(){
+  document.getElementById('quiz-intro').style.display='flex';
+  document.getElementById('quiz-body').classList.remove('show');
+  document.getElementById('quiz-result').classList.remove('show');
+  document.getElementById('quiz-meta').textContent='20 perguntas';
+  const ls=document.getElementById('quiz-last-score');
+  if(ST.quizBest){ls.style.display='block';ls.textContent=`Melhor pontuação: ${ST.quizBest}% · ${ST.quizHistory.length} tentativa${ST.quizHistory.length!==1?'s':''}`;}
+  else{ls.style.display='none';}
+}
+
+function startQuiz(){
+  // shuffle questions
+  quizOrder=[...Array(QUIZ.length).keys()].sort(()=>Math.random()-.5).slice(0,20);
+  quizIdx=0;quizCorrect=0;quizWrong=0;quizCatResults={};ST.quizAnswers=[];
+  document.getElementById('quiz-intro').style.display='none';
+  document.getElementById('quiz-body').classList.add('show');
+  document.getElementById('quiz-result').classList.remove('show');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const qi=QUIZ[quizOrder[quizIdx]];
+  const total=quizOrder.length;
+  const pct=Math.round(quizIdx/total*100);
+
+  document.getElementById('q-num').textContent=`Pergunta ${quizIdx+1} de ${total}`;
+  document.getElementById('q-score-live').textContent=`✓ ${quizCorrect} | ✗ ${quizWrong}`;
+  document.getElementById('q-pfill').style.width=pct+'%';
+  document.getElementById('quiz-meta').textContent=`${quizIdx+1}/20`;
+  document.getElementById('q-cat-badge').textContent=qi.cat;
+  document.getElementById('q-text').textContent=qi.q;
+  document.getElementById('q-feedback').classList.remove('show','correct-fb','wrong-fb');
+  document.getElementById('btn-next-q').classList.remove('show');
+
+  const letters=['A','B','C','D'];
+  document.getElementById('q-options').innerHTML=qi.opts.map((opt,i)=>`
+    <div class="q-opt" id="opt-${i}" onclick="selectOpt(${i})">
+      <div class="q-opt-letter">${letters[i]}</div>
+      <div>${opt}</div>
+    </div>`).join('');
+
+  document.getElementById('screen-quiz').scrollTop=0;
+}
+
+function selectOpt(idx){
+  const qi=QUIZ[quizOrder[quizIdx]];
+  const opts=document.querySelectorAll('.q-opt');
+  opts.forEach(o=>o.classList.add('disabled'));
+  opts[idx].classList.add('selected');
+
+  const correct=idx===qi.ans;
+  if(correct){
+    opts[idx].classList.remove('selected');opts[idx].classList.add('correct');
+    quizCorrect++;
+  } else {
+    opts[idx].classList.remove('selected');opts[idx].classList.add('wrong');
+    opts[qi.ans].classList.add('correct');
+    quizWrong++;
+  }
+
+  // cat tracking
+  if(!quizCatResults[qi.cat])quizCatResults[qi.cat]={c:0,w:0};
+  correct?quizCatResults[qi.cat].c++:quizCatResults[qi.cat].w++;
+
+  ST.quizAnswers.push({q:qi.q,correct,cat:qi.cat});
+
+  // feedback
+  const fb=document.getElementById('q-feedback');
+  fb.className='q-feedback show '+(correct?'correct-fb':'wrong-fb');
+  fb.innerHTML=`<b class="${correct?'c':'w'}">${correct?'✓ Correto!':'✗ Incorreto'}</b>${qi.exp}`;
+  document.getElementById('btn-next-q').classList.add('show');
+  document.getElementById('q-score-live').textContent=`✓ ${quizCorrect} | ✗ ${quizWrong}`;
+
+  if(correct){
+    fb.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+function nextQuestion(){
+  quizIdx++;
+  if(quizIdx>=quizOrder.length)showQuizResult();
+  else renderQuestion();
+}
+
+function showQuizResult(){
+  document.getElementById('quiz-body').classList.remove('show');
+  const res=document.getElementById('quiz-result');
+  res.classList.add('show');
+
+  const pct=Math.round(quizCorrect/quizOrder.length*100);
+  if(pct>ST.quizBest)ST.quizBest=pct;
+  ST.quizHistory.push({date:new Date().toISOString(),pct,correct:quizCorrect,total:quizOrder.length});
+  saveST();
+
+  document.getElementById('qr-n').textContent=pct+'%';
+
+  // animate circle
+  const circ=document.getElementById('qr-circle');
+  const circumference=2*Math.PI*40; // ~251
+  const offset=circumference*(1-pct/100);
+  setTimeout(()=>{circ.style.strokeDashoffset=offset;},100);
+
+  // rating
+  const levels=[
+    [90,'🏆','Excelente! Você domina educação financeira.','Continue refinando com os módulos avançados.'],
+    [70,'🎯','Muito bem! Base sólida consolidada.','Foque nos módulos com erros para completar o domínio.'],
+    [50,'📚','Bom progresso! Metade do caminho dominada.','Revise os módulos de estudo e tente novamente.'],
+    [0,'💪','Continue estudando! Cada tentativa é aprendizado.','Leia os cards dos módulos e volte para o quiz em breve.'],
+  ];
+  const [,icon,h,msg]=levels.find(([min])=>pct>=min);
+  document.getElementById('qr-h').textContent=`${icon} ${h}`;
+  document.getElementById('qr-msg').textContent=msg;
+
+  // breakdown by category
+  const catColors={Fundamentos:'#00c896',Juros:'#3d9be9',Impostos:'#f0c040',Patrimônio:'#e07a30',Investimentos:'#9b72d4',Proteção:'#e05252',Comportamento:'#2dc4b2','Erros Comuns':'#c45c2d'};
+  const bd=document.getElementById('qr-breakdown');
+  bd.innerHTML=`<div class="qr-bd-title">Resultado por módulo</div>`+
+    Object.entries(quizCatResults).map(([cat,r])=>{
+      const dots=[...Array(r.c).fill('<span class="qr-dot c"></span>'),...Array(r.w).fill('<span class="qr-dot w"></span>')].join('');
+      return `<div class="qr-bd-row"><span class="qr-bd-cat" style="color:${catColors[cat]||'var(--text)'}">${cat}</span><div class="qr-bd-res">${dots}</div></div>`;
+    }).join('');
+
+  document.getElementById('quiz-meta').textContent=pct+'%';
+  res.scrollIntoView({behavior:'smooth'});
+}
+
+function resetQuiz(){
+  document.getElementById('quiz-result').classList.remove('show');
+  document.getElementById('quiz-intro').style.display='flex';
+  renderQuizIntro();
+}
+
+// ─── SETTINGS ────────────────────────────────────────
+function saveSettings(){ST.n8nUrl=document.getElementById('n8n-url').value.trim();saveST();setSyncSt('✓ Salvo!','#00c896');}
+function syncNow(){syncN8n(true);}
+function resetAll(){if(!confirm('Resetar todo o progresso?'))return;ST={cards:{},streak:0,lastDate:null,n8nUrl:ST.n8nUrl,totalReviewed:0,quizBest:0,quizHistory:[],quizAnswers:[]};loadST();saveST();navigate('dash');toast('Progresso resetado.');}
+
+// ─── UTILS ───────────────────────────────────────────
+function updateStreak(){const today=new Date().toDateString();if(ST.lastDate===today)return;const yest=new Date(Date.now()-86400000).toDateString();ST.streak=ST.lastDate===yest?ST.streak+1:1;ST.lastDate=today;}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2700);}
+
+// ─── INIT ────────────────────────────────────────────
+loadST();
+const n8nIn=document.getElementById('n8n-url');
+if(n8nIn&&ST.n8nUrl)n8nIn.value=ST.n8nUrl;
+document.getElementById('topDate').textContent=
+  new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}).toUpperCase();
+renderDash();
+</script>
+</body>
+</html>
